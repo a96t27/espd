@@ -5,7 +5,6 @@
 #include <syslog.h>
 #include <libserialport.h>
 #include <ubus_methods.h>
-#include <espd.h>
 
 int main(void)
 {

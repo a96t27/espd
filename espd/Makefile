@@ -7,7 +7,7 @@ PKG_VERSION:=1.0.0
 include $(INCLUDE_DIR)/package.mk
 
 define Package/espd
-	CATEGORY:=Tuya
+	CATEGORY:=Espd
 	TITLE:=Espd
 	DEPENDS := cJSON libubus libubox libblobmsg-json libserialport 
 endef
