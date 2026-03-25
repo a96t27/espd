@@ -8,7 +8,7 @@
 
 int main(void)
 {
-        openlog("tuyad", LOG_CONS | LOG_PID | LOG_NDELAY | LOG_PERROR, LOG_USER);
+        openlog("espd", LOG_CONS | LOG_PID | LOG_NDELAY | LOG_PERROR, LOG_USER);
 
 
         struct ubus_context *ubus_ctx;

@@ -3,6 +3,8 @@
 #include <libubus.h>
 #include <cjson/cJSON.h>
 
+#define BUFFER_SIZE 512
+
 enum {
         PORT,
         PIN,

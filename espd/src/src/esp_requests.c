@@ -1,64 +1,38 @@
 #include <cjson/cJSON.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <libserialport.h>
 #include <syslog.h>
 #include <string.h>
 #include <esp_requests.h>
 
-struct cJSON *esp_switch_request_json(int on, int pin)
+int esp_switch_request(char *buffer, int buf_size, int on, int pin)
 {
-        struct cJSON *json = cJSON_CreateObject();
-        if (json == NULL) {
-                return NULL;
-        }
-        if (on) {
-                cJSON_AddStringToObject(json, "action", "on");
-        } else {
-
-                cJSON_AddStringToObject(json, "action", "off");
-        }
-        cJSON_AddNumberToObject(json, "pin", (double)pin);
-        return json;
+        return snprintf(buffer, buf_size, "{'action': '%s', 'pin': %d}", on ? "on" : "off", pin);
 }
 
-struct cJSON *esp_get_request_json(int pin, char *sensor, char *model)
+int esp_get_request(char *buffer, int buf_size, int pin, char *sensor, int sensor_size, char *model, int model_size)
 {
-        struct cJSON *json = cJSON_CreateObject();
-        if (json == NULL) {
-                return NULL;
-        }
-        cJSON_AddStringToObject(json, "action", "get");
-        cJSON_AddNumberToObject(json, "pin", (double)pin);
-        cJSON_AddStringToObject(json, "sensor", sensor);
-        cJSON_AddStringToObject(json, "model", model);
-        return json;
+        return snprintf(buffer, buf_size, "{'action': 'get', 'pin': %d, 'sensor': '%.*s', 'model': '%.*s'}", pin, sensor_size, sensor, model_size, model);
 }
 
-int send_esp_request(struct sp_port *port, struct cJSON *request, struct cJSON **response)
+int send_request(struct sp_port *port, char *req, int req_size, char *resp_buf, int resp_buf_size)
 {
-        if (port == NULL || request == NULL || response == NULL) {
+        if (port == NULL || req == NULL || req == NULL) {
                 return EXIT_FAILURE;
         }
-        int ret = EXIT_SUCCESS;
-        char *request_str = cJSON_PrintUnformatted(request);
-        int req_len = strlen(request_str);
-        syslog(LOG_INFO, "Sending request to esp");
-        int res = sp_nonblocking_write(port, request_str, req_len);
-        if (res < req_len) {
-                syslog(LOG_ERR, "failed to send");
-                ret = EXIT_FAILURE;
-                goto err_failed_send;
+        int res = sp_nonblocking_write(port, req, req_size);
+        if (res < req_size) {
+                return EXIT_FAILURE;
         }
-        char buf[128] = "";
-        syslog(LOG_INFO, "Receiving response from esp");
-        sp_blocking_read(port, buf, sizeof(buf), TIMEOUT);
-        *response = cJSON_ParseWithLength(buf, sizeof(buf));
-err_failed_send:
-        free(request_str);
-        return ret;
+        res = sp_blocking_read(port, resp_buf, resp_buf_size, TIMEOUT);
+        if (res < 0) {
+                return EXIT_FAILURE;
+        }
+        return EXIT_SUCCESS;
 }
 
-struct sp_port *get_esp_port(char *port_name)
+struct sp_port *setup_esp_port(char *port_name)
 {
         struct sp_port *port;
         int ok = 1;
